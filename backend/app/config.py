@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -10,9 +10,10 @@ class Settings(BaseSettings):
     frontend_dev_origin: str = "http://localhost:3000"
     frontend_prod_origin: str = "https://rate-my-landlord.vercel.app"
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8"
+    }
 
     @property
     def is_dev(self) -> bool:
