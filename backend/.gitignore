@@ -1,0 +1,21 @@
+# Database
+rate_my_landlord.db
+rate_my_landlord.db-journal
+
+# Virtual environment
+venv
+.env
+
+# IDE
+.idea
+.vscode
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Operating system
+.DS_Store
+.DS_Store?
