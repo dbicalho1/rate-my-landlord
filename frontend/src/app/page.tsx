@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { isAuthenticated } from "@/lib/api";
 import { CheckCircle2Icon } from "lucide-react";
 import { TopAlert } from "@/components/TopAlert";
 import { Reveal } from "@/components/Reveal";
 import { SampleReviewCard } from "@/components/SampleReviewCard";
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -172,5 +172,22 @@ export default function Home() {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-white relative overflow-hidden">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+            <p className="mt-2 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </main>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }

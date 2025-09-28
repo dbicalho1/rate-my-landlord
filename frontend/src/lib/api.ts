@@ -1,5 +1,11 @@
 const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? process.env.NEXT_PUBLIC_API_URL || 'https://web-production-4e1e.up.railway.app' // Your Railway deployment URL
+  ? (() => {
+      const url = process.env.NEXT_PUBLIC_API_URL;
+      if (!url) {
+        throw new Error('NEXT_PUBLIC_API_URL is not set for production');
+      }
+      return url;
+    })()
   : 'http://localhost:8000';
 
 // Types based on backend schemas

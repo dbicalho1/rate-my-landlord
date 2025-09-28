@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useMemo, useState, useEffect } from "react";
+import { FormEvent, useMemo, useState, useEffect, Suspense } from "react";
 import { sanitizeEmail, sanitizeString } from "@/lib/sanitize";
 import { authAPI, setAuthToken, type User, isAuthenticated } from "@/lib/api";
 import { WelcomeModal } from "@/components/WelcomeModal";
 import { TopAlert } from "@/components/TopAlert";
 import { AlertCircleIcon, CheckCircle2Icon } from "lucide-react";
 
-export default function SignInPage() {
+function SignInContent() {
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -221,5 +221,22 @@ export default function SignInPage() {
         />
       )}
     </>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-white pt-20">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+            <p className="mt-2 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </main>
+    }>
+      <SignInContent />
+    </Suspense>
   );
 }
