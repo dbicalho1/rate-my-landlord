@@ -8,6 +8,7 @@ import { CheckCircle2Icon } from "lucide-react";
 import { TopAlert } from "@/components/TopAlert";
 import { Reveal } from "@/components/Reveal";
 import { SampleReviewCard } from "@/components/SampleReviewCard";
+import { SeedModal } from "@/components/SeedModal";
 
 function HomeContent() {
   const router = useRouter();
@@ -15,6 +16,7 @@ function HomeContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [showLoggedOut, setShowLoggedOut] = useState(false);
+  const [showSeedModal, setShowSeedModal] = useState(false);
 
   useEffect(() => {
     // Only check authentication after component mounts (hydration)
@@ -35,6 +37,30 @@ function HomeContent() {
     }
   }, [searchParams, router]);
 
+  // Keyboard listener for backslash key to open seed modal
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === '\\' && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        // Only trigger if not focused on input/textarea
+        const activeElement = document.activeElement as HTMLElement | null;
+        if (activeElement && (
+          activeElement.tagName === 'INPUT' || 
+          activeElement.tagName === 'TEXTAREA' ||
+          activeElement.contentEditable === 'true'
+        )) {
+          return;
+        }
+        
+        event.preventDefault();
+        setShowSeedModal(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const goProtected = (target: string) => {
     if (!isLoggedIn) {
@@ -171,6 +197,11 @@ function HomeContent() {
           </Reveal>
         </div>
       </section>
+      
+      <SeedModal 
+        isOpen={showSeedModal} 
+        onClose={() => setShowSeedModal(false)} 
+      />
     </main>
   );
 }

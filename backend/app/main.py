@@ -1,4 +1,6 @@
 import os
+import subprocess
+import sys
 from datetime import timedelta
 from typing import List
 
@@ -237,6 +239,66 @@ def list_my_reviews(
         .all()
     )
     return [_serialize_review(review, current_user, db) for review in reviews]
+
+
+@app.post("/seed-database")
+def seed_database(
+    force: bool = False,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Endpoint to trigger the seed script programmatically.
+    Only authenticated users can trigger this.
+    """
+    try:
+        # Get the path to the seed script
+        script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        script_path = os.path.join(script_dir, "scripts", "seed_reviews.py")
+        
+        if not os.path.exists(script_path):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Seed script not found"
+            )
+        
+        # Build command to run the script
+        cmd = [sys.executable, script_path]
+        if force:
+            cmd.append("--force")
+        
+        # Run the script
+        result = subprocess.run(
+            cmd,
+            cwd=script_dir,
+            capture_output=True,
+            text=True,
+            timeout=60  # 60 second timeout
+        )
+        
+        if result.returncode != 0:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Seed script failed: {result.stderr}"
+            )
+        
+        return {
+            "success": True,
+            "message": "Database seeded successfully",
+            "output": result.stdout.strip(),
+            "force_mode": force
+        }
+        
+    except subprocess.TimeoutExpired:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Seed script timed out"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to run seed script: {str(e)}"
+        )
 
 
 if __name__ == "__main__":
