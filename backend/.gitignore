@@ -3,7 +3,7 @@ rate_my_landlord.db
 rate_my_landlord.db-w
 
 # Virtual environment
-venv
+.venv
 .env
 
 # IDE

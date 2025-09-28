@@ -7,6 +7,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    user: Optional["UserOut"] = None
 
 
 class TokenData(BaseModel):
@@ -62,5 +63,24 @@ class ReviewOut(ReviewBase):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     author_email: Optional[EmailStr] = None
+    is_bookmarked: Optional[bool] = False
+
+    model_config = {"from_attributes": True}
+
+
+# Bookmark schemas
+class BookmarkBase(BaseModel):
+    review_id: int
+
+
+class BookmarkCreate(BookmarkBase):
+    pass
+
+
+class BookmarkOut(BookmarkBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    review: ReviewOut
 
     model_config = {"from_attributes": True}

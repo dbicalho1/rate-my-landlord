@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String, Text, CheckConstraint
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -14,10 +14,18 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     reviews = relationship("Review", back_populates="author", cascade="all,delete-orphan")
+    bookmarks = relationship("Bookmark", back_populates="user", cascade="all,delete-orphan")
 
 
 class Review(Base):
     __tablename__ = "reviews"
+    __table_args__ = (
+        CheckConstraint("overall_rating >= 0 AND overall_rating <= 5", name="ck_reviews_overall_rating_range"),
+        CheckConstraint("maintenance_rating IS NULL OR (maintenance_rating >= 0 AND maintenance_rating <= 5)", name="ck_reviews_maintenance_rating_range"),
+        CheckConstraint("communication_rating IS NULL OR (communication_rating >= 0 AND communication_rating <= 5)", name="ck_reviews_communication_rating_range"),
+        CheckConstraint("respect_rating IS NULL OR (respect_rating >= 0 AND respect_rating <= 5)", name="ck_reviews_respect_rating_range"),
+        CheckConstraint("rent_value_rating IS NULL OR (rent_value_rating >= 0 AND rent_value_rating <= 5)", name="ck_reviews_rent_value_rating_range"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -47,3 +55,16 @@ class Review(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     author = relationship("User", back_populates="reviews")
+    bookmarks = relationship("Bookmark", back_populates="review", cascade="all,delete-orphan")
+
+
+class Bookmark(Base):
+    __tablename__ = "bookmarks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    review_id = Column(Integer, ForeignKey("reviews.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    user = relationship("User", back_populates="bookmarks")
+    review = relationship("Review", back_populates="bookmarks")
