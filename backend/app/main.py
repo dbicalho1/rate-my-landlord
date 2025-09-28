@@ -1,12 +1,12 @@
 import os
+import logging
 import subprocess
 import sys
 from datetime import timedelta
 from typing import List
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from . import auth, models, schemas
@@ -20,22 +20,32 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="RateMyLandlord API", version="0.1.0")
 
+# Configure CORS using environment-driven allowed origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=settings.allowed_cors_origins,
+    allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "X-Requested-With",
+        "Accept",
+        "Origin",
+    ],
+    expose_headers=["Content-Type", "Authorization"],
 )
 
-# Additional CORS headers for stubborn browsers
-@app.middleware("http")
-async def add_cors_headers(request, call_next):
-    response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    return response
+
+@app.on_event("startup")
+async def _log_cors_origins():
+    logger = logging.getLogger("uvicorn.error")
+    logger.info("Allowed CORS origins: %s", settings.allowed_cors_origins)
+
+
+@app.get("/health")
+def health():
+    return {"ok": True}
 
 
 @app.post("/signup", response_model=schemas.UserOut, status_code=status.HTTP_201_CREATED)
@@ -53,8 +63,46 @@ def signup(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
 
 
 @app.post("/login", response_model=schemas.Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = auth.authenticate_user(db=db, email=form_data.username, password=form_data.password)
+async def login(request: Request, db: Session = Depends(get_db)):
+    """Accept both form-encoded and JSON login payloads.
+
+    - Form: fields `username` (email) and `password` (OAuth2 style)
+    - JSON: fields `email` (or `username`) and `password`
+    """
+    email = None
+    password = None
+
+    content_type = request.headers.get("content-type", "").lower()
+    try:
+        if "application/json" in content_type:
+            data = await request.json()
+            email = data.get("email") or data.get("username")
+            password = data.get("password")
+        elif "application/x-www-form-urlencoded" in content_type or "multipart/form-data" in content_type:
+            form = await request.form()
+            email = form.get("username") or form.get("email")
+            password = form.get("password")
+        else:
+            # Try JSON first, then form, to be resilient to missing/odd content-type
+            try:
+                data = await request.json()
+                email = data.get("email") or data.get("username")
+                password = data.get("password")
+            except Exception:
+                try:
+                    form = await request.form()
+                    email = form.get("username") or form.get("email")
+                    password = form.get("password")
+                except Exception:
+                    pass
+    except Exception:
+        # Fall-through to validation error below
+        pass
+
+    if not email or not password:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Missing email/username or password")
+
+    user = auth.authenticate_user(db=db, email=email, password=password)
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect email or password")
 

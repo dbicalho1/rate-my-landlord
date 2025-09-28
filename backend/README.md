@@ -19,6 +19,10 @@ Deployed on Railway: https://railway.com/project/59cc92ac-d9d8-4e45-ad0e-a271bbb
 - Override via env: set `FRONTEND_PROD_ORIGIN` in your environment or `.env`.
 - Dev mode (when `APP_ENV=dev`) automatically allows `http://localhost:3000`.
 
+### Auth payloads
+
+- `POST /login` accepts either form-encoded (`username`, `password`) or JSON (`email` or `username`, and `password`).
+
 ## Features
 
 - User authentication (JWT)
