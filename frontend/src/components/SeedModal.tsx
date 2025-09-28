@@ -23,20 +23,9 @@ export function SeedModal({ isOpen, onClose }: SeedModalProps) {
     setResult(null);
 
     try {
-      const token = localStorage.getItem("auth_token");
-      if (!token) {
-        setResult({
-          success: false,
-          message: "Authentication required",
-          error: "You must be signed in to seed the database"
-        });
-        return;
-      }
-
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/seed-database`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ force: forceMode })

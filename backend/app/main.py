@@ -22,7 +22,11 @@ app = FastAPI(title="RateMyLandlord API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"] + settings.allowed_cors_origins,
+    allow_origins=[
+        "http://localhost:3000", 
+        "http://127.0.0.1:3000",
+        "https://rate-my-landlord-beryl.vercel.app"
+    ] + settings.allowed_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -244,12 +248,11 @@ def list_my_reviews(
 @app.post("/seed-database")
 def seed_database(
     force: bool = False,
-    current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(get_db),
 ):
     """
     Endpoint to trigger the seed script programmatically.
-    Only authenticated users can trigger this.
+    Available for development and testing purposes.
     """
     try:
         # Get the path to the seed script
