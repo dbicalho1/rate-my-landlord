@@ -1,10 +1,8 @@
-# Rate My Philly Landlord
+# Rate My Landlord
 
 A landlord review platform built specifically for Philadelphia renters. Share experiences, browse reviews by neighborhood, and help fellow Philadelphians make better rental decisions.
 
 ## The Stack
-
-**Backend** - Python FastAPI + SQLite
 - Clean REST API with proper validation (based?)
 - Seeded with realistic fake data for testing (french for just generating fake data)
 - Deployed using railway
@@ -15,6 +13,7 @@ A landlord review platform built specifically for Philadelphia renters. Share ex
 - _ABSOLUTELY AMAZING_ animations that don't suck
 
 ## Cool Features
+<!-- Force sync -->
 
 - **Neighborhood-specific search** - Filter by actual Philly neighborhoods (Fishtown, Northern Liberties, etc.)
 - **Street View integration** - See the actual properties with Google Maps
