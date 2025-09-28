@@ -8,7 +8,8 @@ class Settings(BaseSettings):
     rate_limit_window_seconds: int = 60
     disable_rate_limit: bool = False
     frontend_dev_origin: str = "http://localhost:3000"
-    frontend_prod_origin: str = "https://rate-my-landlord.vercel.app"
+    # Default production frontend origin (CORS)
+    frontend_prod_origin: str = "https://rate-my-landlord-beryl.vercel.app"
 
     model_config = {
         "env_file": ".env",
