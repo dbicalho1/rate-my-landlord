@@ -35,6 +35,7 @@ export default function SubmitPage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showValidation, setShowValidation] = useState(false);
 
   useEffect(() => {
     try {
@@ -79,16 +80,32 @@ export default function SubmitPage() {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
+    setShowValidation(false);
 
     try {
       // Validate required fields
-      if (!formData.landlord_name || !formData.review_text || !formData.overall_rating) {
-        setError('Please fill in all required fields');
+      const missingLandlord = !formData.landlord_name?.trim();
+      const missingOverall = !formData.overall_rating;
+      const missingReview = !formData.review_text?.trim();
+
+      if (missingLandlord || missingOverall || missingReview) {
+        setShowValidation(true);
+        setError('Please fill all required fields highlighted in red');
+        // Focus the first invalid input
+        if (missingLandlord) {
+          (document.getElementById('landlord_name') as HTMLInputElement | null)?.focus();
+        } else if (missingOverall) {
+          (document.getElementById('overall_rating') as HTMLSelectElement | null)?.focus();
+        } else if (missingReview) {
+          (document.getElementById('review_text') as HTMLTextAreaElement | null)?.focus();
+        }
         return;
       }
 
-      if (formData.review_text.length < 20) {
-        setError('Review text must be at least 20 characters long');
+      if ((formData.review_text || '').length < 20) {
+        setShowValidation(true);
+        setError('Review must be at least 20 characters long');
+        (document.getElementById('review_text') as HTMLTextAreaElement | null)?.focus();
         return;
       }
 
@@ -124,6 +141,18 @@ export default function SubmitPage() {
     }
   };
 
+  // Helper to style inputs conditionally when invalid after submit
+  const inputClasses = (invalid?: boolean) =>
+    `mt-2 block w-full rounded-md border bg-white px-3 py-2 text-black placeholder-black/40 focus:outline-none focus:ring-2 ${invalid ? 'border-red-500 focus:ring-red-600' : 'border-[#00ac64] focus:ring-[#00ac64]'}`;
+  const selectClasses = (invalid?: boolean) =>
+    `mt-2 block w-full rounded-md border bg-white px-3 py-2 text-black focus:outline-none focus:ring-2 ${invalid ? 'border-red-500 focus:ring-red-600' : 'border-[#00ac64] focus:ring-[#00ac64]'}`;
+  const textareaClasses = inputClasses;
+
+  const landlordInvalid = showValidation && !formData.landlord_name?.trim();
+  const overallInvalid = showValidation && !formData.overall_rating;
+  const reviewTooShort = showValidation && !!formData.review_text && formData.review_text.length > 0 && formData.review_text.length < 20;
+  const reviewInvalid = showValidation && (!formData.review_text?.trim() || reviewTooShort);
+
   return (
     <main className="min-h-screen bg-white pt-20">
       <div className="mx-auto max-w-2xl px-6 py-16">
@@ -148,7 +177,7 @@ export default function SubmitPage() {
 
           <div>
             <label htmlFor="landlord_name" className="block text-sm font-semibold text-black">
-              Landlord name *
+              Landlord name <span className="text-red-600" aria-hidden="true">*</span>
             </label>
             <input
               id="landlord_name"
@@ -158,7 +187,8 @@ export default function SubmitPage() {
               value={formData.landlord_name}
               onChange={handleInputChange}
               placeholder="e.g. John Doe"
-              className="mt-2 block w-full rounded-md border bg-white px-3 py-2 text-black placeholder-black/40 focus:outline-none focus:ring-2 border-[#00ac64]"
+              aria-invalid={landlordInvalid || undefined}
+              className={inputClasses(landlordInvalid)}
             />
           </div>
 
@@ -181,7 +211,7 @@ export default function SubmitPage() {
 
           <div>
             <label htmlFor="overall_rating" className="block text-sm font-semibold text-black">
-              Overall rating *
+              Overall rating <span className="text-red-600" aria-hidden="true">*</span>
             </label>
             <select
               id="overall_rating"
@@ -189,7 +219,8 @@ export default function SubmitPage() {
               required
               value={formData.overall_rating}
               onChange={handleInputChange}
-              className="mt-2 block w-full rounded-md border bg-white px-3 py-2 text-black focus:outline-none focus:ring-2 border-[#00ac64]"
+              aria-invalid={overallInvalid || undefined}
+              className={selectClasses(overallInvalid)}
             >
               <option value={0} disabled>Choose a rating</option>
               <option value={1}>1 - Poor</option>
@@ -210,7 +241,7 @@ export default function SubmitPage() {
                 name="maintenance_rating"
                 value={formData.maintenance_rating || ''}
                 onChange={handleInputChange}
-                className="mt-2 block w-full rounded-md border bg-white px-3 py-2 text-black focus:outline-none focus:ring-2 border-[#00ac64]"
+                className={selectClasses(false)}
               >
                 <option value="">Not rated</option>
                 <option value={1}>1 - Poor</option>
@@ -229,7 +260,7 @@ export default function SubmitPage() {
                 name="communication_rating"
                 value={formData.communication_rating || ''}
                 onChange={handleInputChange}
-                className="mt-2 block w-full rounded-md border bg-white px-3 py-2 text-black focus:outline-none focus:ring-2 border-[#00ac64]"
+                className={selectClasses(false)}
               >
                 <option value="">Not rated</option>
                 <option value={1}>1 - Poor</option>
@@ -251,7 +282,7 @@ export default function SubmitPage() {
                 name="respect_rating"
                 value={formData.respect_rating || ''}
                 onChange={handleInputChange}
-                className="mt-2 block w-full rounded-md border bg-white px-3 py-2 text-black focus:outline-none focus:ring-2 border-[#00ac64]"
+                className={selectClasses(false)}
               >
                 <option value="">Not rated</option>
                 <option value={1}>1 - Poor</option>
@@ -295,7 +326,7 @@ export default function SubmitPage() {
                 value={formData.monthly_rent || ''}
                 onChange={handleInputChange}
                 placeholder="e.g. 1500"
-                className="mt-2 block w-full rounded-md border bg-white px-3 py-2 text-black placeholder-black/40 focus:outline-none focus:ring-2 border-[#00ac64]"
+                className={inputClasses(false)}
               />
             </div>
             <div>
@@ -307,7 +338,7 @@ export default function SubmitPage() {
                 name="would_rent_again"
                 value={formData.would_rent_again === undefined ? '' : String(formData.would_rent_again)}
                 onChange={handleInputChange}
-                className="mt-2 block w-full rounded-md border bg-white px-3 py-2 text-black focus:outline-none focus:ring-2 border-[#00ac64]"
+                className={selectClasses(false)}
               >
                 <option value="">Not specified</option>
                 <option value="true">Yes</option>
@@ -327,7 +358,7 @@ export default function SubmitPage() {
                 type="date"
                 value={formData.move_in_date}
                 onChange={handleInputChange}
-                className="mt-2 block w-full rounded-md border bg-white px-3 py-2 text-black focus:outline-none focus:ring-2 border-[#00ac64]"
+                className={inputClasses(false)}
               />
             </div>
             <div>
@@ -340,14 +371,14 @@ export default function SubmitPage() {
                 type="date"
                 value={formData.move_out_date}
                 onChange={handleInputChange}
-                className="mt-2 block w-full rounded-md border bg-white px-3 py-2 text-black focus:outline-none focus:ring-2 border-[#00ac64]"
+                className={inputClasses(false)}
               />
             </div>
           </div>
 
           <div>
             <label htmlFor="review_text" className="block text-sm font-semibold text-black">
-              Review *
+              Review <span className="text-red-600" aria-hidden="true">*</span>
             </label>
             <textarea
               id="review_text"
@@ -357,7 +388,8 @@ export default function SubmitPage() {
               value={formData.review_text}
               onChange={handleInputChange}
               placeholder="What should renters know? Consider responsiveness, maintenance, communication, fairness, etc. (minimum 20 characters)"
-              className="mt-2 block w-full rounded-md border bg-white px-3 py-2 text-black placeholder-black/40 focus:outline-none focus:ring-2 border-[#00ac64]"
+              aria-invalid={reviewInvalid || undefined}
+              className={textareaClasses(reviewInvalid)}
             />
             <p className="mt-1 text-xs text-gray-600">{formData.review_text?.length || 0}/20 characters minimum</p>
           </div>

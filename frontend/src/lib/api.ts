@@ -147,9 +147,33 @@ const apiRequest = async <T>(
         errorMessage = errorData.detail;
       } else if (Array.isArray(errorData.detail)) {
         // Handle FastAPI validation errors
-        errorMessage = errorData.detail.map((err: any) =>
-          `${err.loc?.join(' -> ') || 'Field'}: ${err.msg || 'Invalid'}`
-        ).join(', ');
+        const toLabel = (raw: string): string => {
+          const map: Record<string, string> = {
+            landlord_name: 'Landlord name',
+            overall_rating: 'Overall rating',
+            review_text: 'Review',
+            property_address: 'Property address',
+            move_in_date: 'Move in date',
+            move_out_date: 'Move out date',
+            monthly_rent: 'Monthly rent',
+            would_rent_again: 'Would rent again',
+          };
+          if (map[raw]) return map[raw];
+          // Default: snake_case to words
+          return raw.replace(/_/g, ' ').replace(/\b\w/g, (m: string) => m.toUpperCase());
+        };
+
+        errorMessage = errorData.detail
+          .map((err: any) => {
+            const loc: string[] = Array.isArray(err.loc) ? err.loc : [String(err.loc || 'Field')];
+            const filtered = loc.filter((p) => p !== 'body' && p !== 'query' && p !== 'path');
+            const field = filtered[filtered.length - 1] || 'Field';
+            const label = toLabel(String(field));
+            const msg: string = err.msg || 'Invalid';
+            const isRequired = /required/i.test(msg) || /missing/i.test(String(err.type || ''));
+            return isRequired ? `${label} is required` : `${label}: ${msg}`;
+          })
+          .join('; ');
       } else {
         errorMessage = JSON.stringify(errorData.detail);
       }
