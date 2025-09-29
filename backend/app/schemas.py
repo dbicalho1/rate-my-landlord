@@ -53,7 +53,8 @@ class ReviewBase(BaseModel):
 
 
 class ReviewCreate(ReviewBase):
-    pass
+    # Optional contact email only during creation; not returned in outputs
+    contact_email: Optional[EmailStr] = None
 
 
 class ReviewOut(ReviewBase):

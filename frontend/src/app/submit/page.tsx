@@ -5,17 +5,19 @@ import { useEffect, useState } from "react";
 import { FormEvent } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { reviewsAPI, type ReviewCreate } from "@/lib/api";
-import { sanitizeString } from "@/lib/sanitize";
+import { sanitizeString, sanitizeEmail } from "@/lib/sanitize";
 import { TopAlert } from "@/components/TopAlert";
 import { AlertCircleIcon } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+
+type FormDataState = Partial<ReviewCreate> & { contact_email?: string };
 
 export default function SubmitPage() {
   const router = useRouter();
   const pathname = usePathname();
 
   // Form state
-  const [formData, setFormData] = useState<Partial<ReviewCreate>>({
+  const [formData, setFormData] = useState<FormDataState>({
     landlord_name: '',
     property_address: '',
     overall_rating: 0,
@@ -28,7 +30,8 @@ export default function SubmitPage() {
     move_in_date: '',
     move_out_date: '',
     is_anonymous: false,
-    review_text: ''
+    review_text: '',
+    contact_email: ''
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -65,12 +68,6 @@ export default function SubmitPage() {
       nextValue = value === '' ? undefined : Number(value);
     } else if (name === 'would_rent_again') {
       nextValue = value === '' ? undefined : value === 'true';
-    } else if (
-      name === 'landlord_name' ||
-      name === 'property_address' ||
-      name === 'review_text'
-    ) {
-      nextValue = sanitizeString(value);
     }
 
     setFormData(prev => ({
@@ -96,6 +93,17 @@ export default function SubmitPage() {
         return;
       }
 
+      // Optional email validation (if provided)
+      let cleanedEmail: string | undefined = undefined;
+      if (formData.contact_email && formData.contact_email.trim().length > 0) {
+        const candidate = sanitizeEmail(formData.contact_email);
+        if (!candidate) {
+          setError('Please enter a valid email address or leave it blank');
+          return;
+        }
+        cleanedEmail = candidate;
+      }
+
       // Clamp and sanitize just before submit
       const overall = Math.max(1, Math.min(5, Number(formData.overall_rating)));
       const reviewData: ReviewCreate = {
@@ -114,6 +122,7 @@ export default function SubmitPage() {
         move_out_date: formData.move_out_date || undefined,
         is_anonymous: !!formData.is_anonymous,
         review_text: sanitizeString(formData.review_text || ''),
+        contact_email: cleanedEmail,
       };
 
       await reviewsAPI.create(reviewData);
@@ -177,6 +186,21 @@ export default function SubmitPage() {
               value={formData.property_address}
               onChange={handleInputChange}
               placeholder="e.g. 123 Main St, Springfield, IL"
+              className="mt-2 block w-full rounded-md border bg-white px-3 py-2 text-black placeholder-black/40 focus:outline-none focus:ring-2 border-[#00ac64]"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="contact_email" className="block text-sm font-semibold text-black">
+              Email (optional)
+            </label>
+            <input
+              id="contact_email"
+              name="contact_email"
+              type="email"
+              value={formData.contact_email || ''}
+              onChange={handleInputChange}
+              placeholder="you@example.com"
               className="mt-2 block w-full rounded-md border bg-white px-3 py-2 text-black placeholder-black/40 focus:outline-none focus:ring-2 border-[#00ac64]"
             />
           </div>

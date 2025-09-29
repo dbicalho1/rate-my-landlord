@@ -58,6 +58,7 @@ export interface ReviewCreate {
   move_out_date?: string;
   is_anonymous: boolean;
   review_text: string;
+  contact_email?: string; // optional, not exposed in list responses
 }
 
 export interface Bookmark {

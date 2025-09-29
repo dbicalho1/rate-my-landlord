@@ -51,6 +51,9 @@ class Review(Base):
 
     review_text = Column(Text, nullable=False)
 
+    # Optional contact email provided during submission; not exposed in API responses
+    contact_email = Column(String(255))
+
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

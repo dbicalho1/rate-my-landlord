@@ -6,6 +6,7 @@ from datetime import timedelta
 from typing import List
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
+from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -17,6 +18,25 @@ from .rate_limiter import ensure_can_submit, note_submission
 
 settings = get_settings()
 Base.metadata.create_all(bind=engine)
+
+
+def _ensure_optional_columns():
+    """Ensure optional columns added after initial release exist (SQLite-safe).
+
+    Currently adds `contact_email` to `reviews` if missing.
+    """
+    try:
+        with engine.begin() as conn:
+            # Check existing columns in reviews table
+            cols = [row[1] for row in conn.execute(text("PRAGMA table_info(reviews)"))]
+            if "contact_email" not in cols:
+                conn.execute(text("ALTER TABLE reviews ADD COLUMN contact_email VARCHAR(255)"))
+    except Exception:
+        # Non-fatal; app still runs even if migration failed
+        pass
+
+
+_ensure_optional_columns()
 
 app = FastAPI(title="RateMyLandlord API", version="0.1.0")
 
@@ -204,6 +224,7 @@ def submit_review(
         move_out_date=review_in.move_out_date,
         is_anonymous=review_in.is_anonymous,
         review_text=review_in.review_text,
+        contact_email=(review_in.contact_email or None),
     )
 
     db.add(review)
